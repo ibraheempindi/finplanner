@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Budget Planner - Developer Tools</title>
+  <style>
+    * { box-sizing: border-box }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: #2c3e50;
+    }
+    header {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      color: #fff;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      margin: 0 0 12px 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    nav a {
+      color: #3498db;
+      text-decoration: none;
+      margin-right: 16px;
+      font-weight: 500;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    main {
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin: 0 0 16px 0;
+      color: #2c3e50;
+      font-size: 1.25rem;
+    }
+    h3 {
+      margin: 20px 0 12px 0;
+      color: #34495e;
+      font-size: 1rem;
+    }
+    button {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    button:hover {
+      background: #c0392b;
+    }
+    button.refresh {
+      background: #3498db;
+    }
+    button.refresh:hover {
+      background: #2980b9;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      background: #fff;
+    }
+    th {
+      background: #ecf0f1;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #bdc3c7;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .empty {
+      text-align: center;
+      color: #7f8c8d;
+      padding: 20px;
+      font-style: italic;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+    .status {
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .status.success {
+      background: #d5f4e6;
+      color: #27ae60;
+    }
+    .status.error {
+      background: #fadbd8;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔧 Budget Planner - Developer Tools</h1>
+    <nav>
+      <a href="/">← Back to App</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Database Inspector</h2>
+      <button class="refresh" onclick="loadDatabase()">🔄 Refresh Data</button>
+      <button onclick="clearDatabase()">🗑️ Clear All Data</button>
+      
+      <div id="status"></div>
+      
+      <h3>Monthly Plans</h3>
+      <table id="plans-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Month</th>
+            <th>Income</th>
+            <th>Expenses (JSON)</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="plans-body">
+          <tr><td colspan="5" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Daily Expenses</h3>
+      <table id="expenses-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Note</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="expenses-body">
+          <tr><td colspan="6" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Raw JSON Data</h3>
+      <pre id="raw-data">Loading...</pre>
+    </div>
+  </main>
+
+  <script>
+    async function loadDatabase() {
+      try {
+        const res = await fetch('/api/dev/db');
+        if (!res.ok) throw new Error('Failed to load database');
+        const data = await res.json();
+        
+        // Display plans
+        const plansBody = document.getElementById('plans-body');
+        if (data.plans.length === 0) {
+          plansBody.innerHTML = '<tr><td colspan="5" class="empty">No plans yet</td></tr>';
+        } else {
+          plansBody.innerHTML = data.plans.map(p => `
+            <tr>
+              <td>${p.id}</td>
+              <td>${p.month}</td>
+              <td>$${parseFloat(p.income).toFixed(2)}</td>
+              <td><code>${JSON.stringify(JSON.parse(p.expenses || '{}')).substring(0, 50)}...</code></td>
+              <td>${new Date(p.created_at).toLocaleString()}</td>
+            </tr>
+          `).join('');
+        }
+        
+        // Display expenses
+        const expensesBody = document.getElementById('expenses-body');
+        if (data.expenses.length === 0) {
+          expensesBody.innerHTML = '<tr><td colspan="6" class="empty">No expenses yet</td></tr>';
+        } else {
+          expensesBody.innerHTML = data.expenses.map(e => `
+            <tr>
+              <td>${e.id}</td>
+              <td>${e.date}</td>
+              <td>$${parseFloat(e.amount).toFixed(2)}</td>
+              <td>${e.category || '-'}</td>
+              <td>${e.note || '-'}</td>
+              <td>${new Date(e.created_at).toLocaleString()}</td>
+            </tr>
+          `).join('');
+        }
+        
+        // Display raw JSON
+        document.getElementById('raw-data').textContent = JSON.stringify(data, null, 2);
+        
+        showStatus('Database loaded successfully', 'success');
+      } catch(e) {
+        console.error('Error:', e);
+        showStatus('Error loading database: ' + e.message, 'error');
+      }
+    }
+
+    async function clearDatabase() {
+      if (!confirm('Are you sure? This will delete ALL plans and expenses.')) return;
+      
+      try {
+        const res = await fetch('/api/dev/clear', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to clear database');
+        
+        showStatus('Database cleared successfully', 'success');
+        await loadDatabase();
+      } catch(e) {
+        console.error('Error:', e);
+        showStatus('Error clearing database: ' + e.message, 'error');
+      }
+    }
+
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+      setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
+    }
+
+    // Load on page load
+    loadDatabase();
+  </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Budget Planner</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Budget Planner</h1>
+    <nav>
+      <button id="show-plan">Monthly Plan</button>
+      <button id="show-expense">Daily Expenses</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="plan-summary-bar" class="card hidden"></div>
+    <section id="plan-section" class="card">
+      <h2>Monthly Budget Plan</h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <label style="margin:0">History:
+          <select id="history-months" style="min-width:160px">
+            <option value="">-- Select month --</option>
+          </select>
+        </label>
+        <button id="load-history" class="btn-small">Load</button>
+        <button id="copy-to-current" class="btn-small">Copy to Current</button>
+        <button id="copy-to-next" class="btn-small">Copy to Next</button>
+      </div>
+      <form id="plan-form" class="form-group">
+        <div class="form-row">
+          <label>Month <input type="month" name="month" required></label>
+          <label>Monthly Income <input type="number" name="income" step="0.01" required></label>
+        </div>
+        <label>Planned Expenses (JSON)
+          <div class="example-row">
+            <small class="example-label">Example:</small>
+            <pre id="expenses-example" class="example-code">{"Rent":1000, "Food":300, "Grocery":100}</pre>
+          </div>
+          <textarea id="expenses-textarea" name="expenses" placeholder='{"Rent":1000, "Food":300}'></textarea>
+        </label>
+        <button type="submit" class="btn-primary">Save Plan</button>
+      </form>
+      <div id="current-plan"></div>
+    </section>
+
+    <section id="expense-section" class="card hidden">
+      <h2>Record Daily Expense</h2>
+      <form id="expense-form" class="form-group">
+        <div class="form-row">
+          <label>Date <input type="date" name="date" required></label>
+          <label>Amount <input type="number" name="amount" step="0.01" placeholder="0.00" required></label>
+        </div>
+        <div class="form-row">
+          <label>Category <select id="category-select" name="category" required></select></label>
+          <label>Note <input type="text" name="note" placeholder="Optional details"></label>
+        </div>
+        <button type="submit" class="btn-primary">Record Expense</button>
+      </form>
+      <div class="expenses-header">
+        <h3>Recent Expenses</h3>
+      </div>
+      <div id="expense-filters" style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+          <label style="font-size:0.9rem;margin:0">Start Date <input type="date" id="filter-start-date" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:0.9rem"></label>
+          <label style="font-size:0.9rem;margin:0">End Date <input type="date" id="filter-end-date" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:0.9rem"></label>
+          <label style="font-size:0.9rem;margin:0">Category <select id="filter-category" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:0.9rem"><option value="">All</option></select></label>
+          <label style="font-size:0.9rem;margin:0">Min Amount <input type="number" id="filter-min-amount" placeholder="0" step="0.01" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:0.9rem"></label>
+          <label style="font-size:0.9rem;margin:0">Max Amount <input type="number" id="filter-max-amount" placeholder="99999" step="0.01" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:0.9rem"></label>
+          <button type="button" id="clear-filters" class="btn-small" style="align-self:flex-end">Clear Filters</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>Filtered Results</strong>
+        <div id="expenses-total" style="font-weight:600;color:#e74c3c;font-size:1rem">Total: $0.00</div>
+      </div>
+      <ul id="expenses-list"></ul>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

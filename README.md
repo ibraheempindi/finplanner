@@ -1,0 +1,20 @@
+# Budget Planner (Basic)
+
+A minimal mobile-friendly budget planner using Express and SQLite.
+
+Quick start:
+
+```bash
+cd firstwebsite
+npm install
+npm start
+```
+
+Open http://localhost:3000 in your browser.
+
+Features:
+- Set a monthly income and planned expenses (JSON)
+- Add daily expenses
+- Simple SQLite-backed API
+
+This project is intended for learning and can be extended with authentication, better validation, and richer UI.
