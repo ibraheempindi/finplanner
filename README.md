@@ -5,7 +5,7 @@ A minimal mobile-friendly budget planner using Express and SQLite.
 Quick start:
 
 ```bash
-cd firstwebsite
+cd finplanner
 npm install
 npm start
 ```
