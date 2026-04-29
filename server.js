@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: 'your-secret-key' // In production, use environment variable
+  secretOrKey: process.env.JWT_SECRET || 'iby-secret-key'
 };
 
 passport.use(new JwtStrategy(jwtOptions, async (payload, done) => {
