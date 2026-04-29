@@ -286,7 +286,7 @@ async function submitPlan(ev){
 
 async function loadExpenses(){
   try {
-    const res = await fetch('/api/expenses');
+    const res = await fetch('/api/expenses', { headers: getAuthHeaders() });
     const rows = await res.json();
     allExpenses = rows;  // store all expenses
     
@@ -391,7 +391,7 @@ function applyExpenseFilters(){
         if (newNote === null) return;
         try {
           const res = await fetch('/api/expense/' + id, {
-            method: 'PUT', headers: {'content-type':'application/json'},
+            method: 'PUT', headers: getAuthHeaders(),
             body: JSON.stringify({ date: newDate, amount: parseFloat(newAmount), category: newCategory, note: newNote })
           });
           if (!res.ok) throw new Error('Failed');
@@ -405,7 +405,7 @@ function applyExpenseFilters(){
         const id = delBtn.dataset.id;
         if (!confirm('Delete this expense?')) return;
         try {
-          const res = await fetch('/api/expense/' + id, { method: 'DELETE' });
+          const res = await fetch('/api/expense/' + id, { method: 'DELETE', headers: getAuthHeaders() });
           if (!res.ok) throw new Error('Failed');
           await loadExpenses();
           await getPlan();
@@ -432,7 +432,7 @@ async function submitExpense(ev){
 
     const res = await fetch('/api/expense', {
       method:'POST',
-      headers:{'content-type':'application/json'},
+      headers: getAuthHeaders(),
       body: JSON.stringify({ date, amount, category, note })
     });
 
