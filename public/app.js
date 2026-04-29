@@ -266,7 +266,7 @@ async function submitPlan(ev){
 
     const res = await fetch('/api/plan', {
       method:'POST',
-      headers:{'content-type':'application/json'},
+      headers: getAuthHeaders(),
       body: JSON.stringify({ month, income, expenses })
     });
 
