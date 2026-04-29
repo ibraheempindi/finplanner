@@ -2,10 +2,15 @@ const { Low } = require('lowdb');
 const { JSONFile } = require('lowdb/node');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 
 class User {
   constructor() {
     this.dbPath = path.join(__dirname, '..', 'data', 'users.json');
+    const dataDir = path.join(__dirname, '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir);
+    }
     this.adapter = new JSONFile(this.dbPath);
     this.db = new Low(this.adapter, { users: [] });
     this.db.read();

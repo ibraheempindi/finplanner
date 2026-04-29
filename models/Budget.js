@@ -1,10 +1,15 @@
 const { Low } = require('lowdb');
 const { JSONFile } = require('lowdb/node');
 const path = require('path');
+const fs = require('fs');
 
 class BudgetDB {
   constructor() {
     this.dbPath = path.join(__dirname, '..', 'data', 'budget.json');
+    const dataDir = path.join(__dirname, '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir);
+    }
     this.adapter = new JSONFile(this.dbPath);
     this.db = new Low(this.adapter, { plans: [], expenses: [] });
     this.db.read();
