@@ -167,13 +167,6 @@ app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session
     res.json({ planId });
   } catch (error) {
     res.status(500).json({ error: error.message });
-// API: delete a planned category from latest plan
-app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  try {
-    const planId = await BudgetDB.deletePlanExpense(req.params.category);
-    res.json({ planId });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
