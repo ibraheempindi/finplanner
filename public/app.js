@@ -238,7 +238,7 @@ function addHistoryHandlers(){
       }
       try {
         const r = await fetch('/api/plan', {
-          method: 'POST', headers: {'content-type':'application/json'},
+          method: 'POST', headers: getAuthHeaders(),
           body: JSON.stringify({ month: targetMonth, income: plan.income, expenses: plan.expenses })
         });
         if (!r.ok) throw new Error('Failed');
