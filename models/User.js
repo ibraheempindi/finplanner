@@ -1,21 +1,7 @@
-const { Low } = require('lowdb');
-const { JSONFile } = require('lowdb/node');
+const { pool } = require('./db');
 const bcrypt = require('bcryptjs');
-const path = require('path');
-const fs = require('fs');
 
 class User {
-  constructor() {
-    this.dbPath = path.join(__dirname, '..', 'data', 'users.json');
-    const dataDir = path.join(__dirname, '..', 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir);
-    }
-    this.adapter = new JSONFile(this.dbPath);
-    this.db = new Low(this.adapter, { users: [] });
-    this.db.read();
-  }
-
   async hashPassword(password) {
     return await bcrypt.hash(password, 10);
   }
@@ -25,26 +11,26 @@ class User {
   }
 
   async create(email, password) {
-    await this.db.read();
-    const existingUser = this.db.data.users.find(u => u.email === email);
-    if (existingUser) {
+    const existing = await this.findByEmail(email);
+    if (existing) {
       throw new Error('User already exists');
     }
     const hashedPassword = await this.hashPassword(password);
-    const user = { id: Date.now().toString(), email, password: hashedPassword };
-    this.db.data.users.push(user);
-    await this.db.write();
-    return { id: user.id, email: user.email };
+    const result = await pool.query(
+      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email',
+      [email, hashedPassword]
+    );
+    return result.rows[0];
   }
 
   async findByEmail(email) {
-    await this.db.read();
-    return this.db.data.users.find(u => u.email === email);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result.rows[0] || null;
   }
 
   async findById(id) {
-    await this.db.read();
-    return this.db.data.users.find(u => u.id === id);
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    return result.rows[0] || null;
   }
 }
 

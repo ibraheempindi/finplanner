@@ -8,6 +8,7 @@ const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const User = require('./models/User');
 const BudgetDB = require('./models/Budget');
+const { initDb } = require('./models/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -65,9 +66,9 @@ app.post('/auth/login', async (req, res) => {
 app.get('/api/plan', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const currentMonth = new Date().toISOString().slice(0, 7);
-    let plan = await BudgetDB.getPlanByMonth(currentMonth);
+    let plan = await BudgetDB.getPlanByMonth(currentMonth, req.user.id);
     if (!plan) {
-      plan = await BudgetDB.getLatestPlan();
+      plan = await BudgetDB.getLatestPlan(req.user.id);
     }
     res.json(plan || null);
   } catch (error) {
@@ -78,7 +79,7 @@ app.get('/api/plan', passport.authenticate('jwt', { session: false }), async (re
 // API: list all plans (id, month, income)
 app.get('/api/plans', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const plans = await BudgetDB.getPlans();
+    const plans = await BudgetDB.getPlans(req.user.id);
     res.json(plans);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -88,7 +89,7 @@ app.get('/api/plans', passport.authenticate('jwt', { session: false }), async (r
 // API: get plan by id
 app.get('/api/plan/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const plan = await BudgetDB.getPlanById(req.params.id);
+    const plan = await BudgetDB.getPlanById(req.params.id, req.user.id);
     if (!plan) return res.status(404).json({ error: 'Plan not found' });
     res.json(plan);
   } catch (error) {
@@ -100,7 +101,7 @@ app.get('/api/plan/:id', passport.authenticate('jwt', { session: false }), async
 app.post('/api/plan', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { month, income, expenses } = req.body;
-    const plan = await BudgetDB.createPlan(month, income, expenses);
+    const plan = await BudgetDB.createPlan(month, income, expenses, req.user.id);
     res.json({ id: plan.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -111,7 +112,7 @@ app.post('/api/plan', passport.authenticate('jwt', { session: false }), async (r
 app.post('/api/expense', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { date, amount, category, note } = req.body;
-    const expense = await BudgetDB.createExpense(date, amount, category, note);
+    const expense = await BudgetDB.createExpense(date, amount, category, note, req.user.id);
     res.json({ id: expense.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -121,7 +122,7 @@ app.post('/api/expense', passport.authenticate('jwt', { session: false }), async
 // API: get expenses
 app.get('/api/expenses', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const expenses = await BudgetDB.getExpenses();
+    const expenses = await BudgetDB.getExpenses(req.user.id);
     res.json(expenses);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -131,7 +132,7 @@ app.get('/api/expenses', passport.authenticate('jwt', { session: false }), async
 // API: delete an expense
 app.delete('/api/expense/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const id = await BudgetDB.deleteExpense(req.params.id);
+    const id = await BudgetDB.deleteExpense(req.params.id, req.user.id);
     res.json({ deletedId: id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -142,7 +143,7 @@ app.delete('/api/expense/:id', passport.authenticate('jwt', { session: false }),
 app.put('/api/expense/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { date, amount, category, note } = req.body;
-    const expense = await BudgetDB.updateExpense(req.params.id, { date, amount: parseFloat(amount), category, note });
+    const expense = await BudgetDB.updateExpense(req.params.id, { date, amount: parseFloat(amount), category, note }, req.user.id);
     res.json({ updatedId: expense.id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -153,7 +154,7 @@ app.put('/api/expense/:id', passport.authenticate('jwt', { session: false }), as
 app.put('/api/plan/expense', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { category, amount } = req.body;
-    const result = await BudgetDB.updatePlanExpense(category, amount);
+    const result = await BudgetDB.updatePlanExpense(category, amount, req.user.id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -163,13 +164,20 @@ app.put('/api/plan/expense', passport.authenticate('jwt', { session: false }), a
 // API: delete a planned category from latest plan
 app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const planId = await BudgetDB.deletePlanExpense(req.params.category);
+    const planId = await BudgetDB.deletePlanExpense(req.params.category, req.user.id);
     res.json({ planId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server listening on http://localhost:${PORT}`);
+    });
+  })
+  .catch(error => {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  });
