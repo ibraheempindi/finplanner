@@ -2,12 +2,12 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const User = require('./models/User');
+const BudgetDB = require('./models/Budget');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,14 +35,6 @@ app.use(bodyParser.json());
 app.use(passport.initialize());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const dbFile = path.join(__dirname, 'data', 'budget.db');
-const fs = require('fs');
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-  fs.mkdirSync(path.join(__dirname, 'data'));
-}
-
-const db = new sqlite3.Database(dbFile);
-
 // Auth routes
 app.post('/auth/register', async (req, res) => {
   try {
@@ -69,170 +61,120 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// Initialize tables
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS plan (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    month TEXT,
-    income REAL,
-    expenses TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
-    amount REAL,
-    category TEXT,
-    note TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
-
 // API: get latest plan (prefers current month if exists)
-app.get('/api/plan', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  // try to get current month's plan first
-  db.get('SELECT * FROM plan WHERE month = ? ORDER BY id DESC LIMIT 1', [currentMonth], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (row) {
-      try { row.expenses = JSON.parse(row.expenses || '{}'); } catch(e){ row.expenses = {}; }
-      return res.json(row);
+app.get('/api/plan', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    let plan = await BudgetDB.getPlanByMonth(currentMonth);
+    if (!plan) {
+      plan = await BudgetDB.getLatestPlan();
     }
-    // if no current month plan, return latest plan
-    db.get('SELECT * FROM plan ORDER BY id DESC LIMIT 1', (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!row) return res.json(null);
-      try { row.expenses = JSON.parse(row.expenses || '{}'); } catch(e){ row.expenses = {}; }
-      res.json(row);
-    });
-  });
+    res.json(plan || null);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: list all plans (id, month, income)
-app.get('/api/plans', passport.authenticate('jwt', { session: false }), (req, res) => {
-  db.all('SELECT id, month, income, expenses, created_at FROM plan ORDER BY month DESC, id DESC', (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    // parse expenses field for each row
-    const parsed = rows.map(r => {
-      try { r.expenses = JSON.parse(r.expenses || '{}'); } catch(e){ r.expenses = {}; }
-      return r;
-    });
-    res.json(parsed);
-  });
+app.get('/api/plans', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const plans = await BudgetDB.getPlans();
+    res.json(plans);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: get plan by id
-app.get('/api/plan/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const id = req.params.id;
-  db.get('SELECT * FROM plan WHERE id = ?', [id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Plan not found' });
-    try { row.expenses = JSON.parse(row.expenses || '{}'); } catch(e){ row.expenses = {}; }
-    res.json(row);
-  });
+app.get('/api/plan/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const plan = await BudgetDB.getPlanById(req.params.id);
+    if (!plan) return res.status(404).json({ error: 'Plan not found' });
+    res.json(plan);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: post a new plan
-app.post('/api/plan', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const { month, income, expenses } = req.body;
-  const expensesStr = JSON.stringify(expenses || {});
-  db.run('INSERT INTO plan (month, income, expenses) VALUES (?, ?, ?)', [month, income, expensesStr], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
+app.post('/api/plan', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { month, income, expenses } = req.body;
+    const plan = await BudgetDB.createPlan(month, income, expenses);
+    res.json({ id: plan.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: post an expense
-app.post('/api/expense', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const { date, amount, category, note } = req.body;
-  db.run('INSERT INTO expenses (date, amount, category, note) VALUES (?, ?, ?, ?)', [date, amount, category, note], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
+app.post('/api/expense', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { date, amount, category, note } = req.body;
+    const expense = await BudgetDB.createExpense(date, amount, category, note);
+    res.json({ id: expense.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: get expenses
-app.get('/api/expenses', passport.authenticate('jwt', { session: false }), (req, res) => {
-  db.all('SELECT * FROM expenses ORDER BY date DESC, id DESC', (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+app.get('/api/expenses', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const expenses = await BudgetDB.getExpenses();
+    res.json(expenses);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: delete an expense
-app.delete('/api/expense/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const id = req.params.id;
-  db.run('DELETE FROM expenses WHERE id = ?', [id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
+app.delete('/api/expense/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const id = await BudgetDB.deleteExpense(req.params.id);
     res.json({ deletedId: id });
-  });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: update an expense
-app.put('/api/expense/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const id = req.params.id;
-  const { date, amount, category, note } = req.body;
-  db.run('UPDATE expenses SET date = ?, amount = ?, category = ?, note = ? WHERE id = ?', [date, amount, category, note, id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ updatedId: id });
-  });
+app.put('/api/expense/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { date, amount, category, note } = req.body;
+    const expense = await BudgetDB.updateExpense(req.params.id, { date, amount: parseFloat(amount), category, note });
+    res.json({ updatedId: expense.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: update a planned category amount (updates latest plan)
-app.put('/api/plan/expense', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const { category, amount } = req.body;
-  db.get('SELECT * FROM plan ORDER BY id DESC LIMIT 1', (err, plan) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!plan) return res.status(400).json({ error: 'No plan found' });
-    let expenses = {};
-    try { expenses = JSON.parse(plan.expenses || '{}'); } catch(e){ expenses = {}; }
-    expenses[category] = parseFloat(amount) || 0;
-    const expensesStr = JSON.stringify(expenses);
-    db.run('UPDATE plan SET expenses = ? WHERE id = ?', [expensesStr, plan.id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ planId: plan.id, category, amount: expenses[category] });
-    });
-  });
+app.put('/api/plan/expense', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { category, amount } = req.body;
+    const result = await BudgetDB.updatePlanExpense(category, amount);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API: delete a planned category from latest plan
-app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session: false }), (req, res) => {
-  const category = req.params.category;
-  db.get('SELECT * FROM plan ORDER BY id DESC LIMIT 1', (err, plan) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!plan) return res.status(400).json({ error: 'No plan found' });
-    let expenses = {};
-    try { expenses = JSON.parse(plan.expenses || '{}'); } catch(e){ expenses = {}; }
-    if (expenses.hasOwnProperty(category)) delete expenses[category];
-    const expensesStr = JSON.stringify(expenses);
-    db.run('UPDATE plan SET expenses = ? WHERE id = ?', [expensesStr, plan.id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ planId: plan.id, deleted: category });
-    });
-  });
-});
-
-// DEV: get all database data for inspection
-app.get('/api/dev/db', passport.authenticate('jwt', { session: false }), (req, res) => {
-  db.all('SELECT * FROM plan', (err, plans) => {
-    if (err) return res.status(500).json({ error: err.message });
-    db.all('SELECT * FROM expenses', (err, expenses) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ plans, expenses });
-    });
-  });
-});
-
-// DEV: clear all data (for testing)
-app.post('/api/dev/clear', passport.authenticate('jwt', { session: false }), (req, res) => {
-  db.run('DELETE FROM plan', (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    db.run('DELETE FROM expenses', (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'All data cleared' });
-    });
-  });
+app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const planId = await BudgetDB.deletePlanExpense(req.params.category);
+    res.json({ planId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+// API: delete a planned category from latest plan
+app.delete('/api/plan/expense/:category', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const planId = await BudgetDB.deletePlanExpense(req.params.category);
+    res.json({ planId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(PORT, () => {
