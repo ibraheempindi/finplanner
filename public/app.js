@@ -2,10 +2,17 @@ let currentPlan = null;
 let plansCache = [];
 let allExpenses = [];  // cache all expenses for filtering
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+}
 
 async function getPlan(){
   try {
-    const res = await fetch('/api/plan');
+    const res = await fetch('/api/plan', { headers: getAuthHeaders() });
     const data = await res.json();
     currentPlan = data;
 
@@ -18,7 +25,7 @@ async function getPlan(){
     }
 
     // Get all expenses to calculate remaining balance
-    const expensesRes = await fetch('/api/expenses');
+    const expensesRes = await fetch('/api/expenses', { headers: getAuthHeaders() });
     const expenses = await expensesRes.json();
 
     // Build HTML display
@@ -62,7 +69,7 @@ async function getPlan(){
         if (isNaN(amt)) { alert('Invalid amount'); return; }
         try {
           const r = await fetch('/api/plan/expense', {
-            method: 'PUT', headers: {'content-type':'application/json'},
+            method: 'PUT', headers: getAuthHeaders(),
             body: JSON.stringify({ category: cat, amount: amt })
           });
           if (!r.ok) throw new Error('Failed');
@@ -75,7 +82,7 @@ async function getPlan(){
         const cat = btn.dataset.category;
         if (!confirm('Delete planned category "' + cat + '"?')) return;
         try {
-          const r = await fetch('/api/plan/expense/' + encodeURIComponent(cat), { method: 'DELETE' });
+          const r = await fetch('/api/plan/expense/' + encodeURIComponent(cat), { method: 'DELETE', headers: getAuthHeaders() });
           if (!r.ok) throw new Error('Failed');
           await getPlan();
         } catch (e) { alert('Error deleting planned category'); }
@@ -91,7 +98,7 @@ async function getPlan(){
 // load list of available plans (history) and populate selector
 async function loadPlansList(){
   try {
-    const res = await fetch('/api/plans');
+    const res = await fetch('/api/plans', { headers: getAuthHeaders() });
     const list = await res.json();
     plansCache = list;
     const sel = document.getElementById('history-months');
@@ -111,11 +118,11 @@ async function loadPlansList(){
 // load a specific plan by id and render it as the active view (without making it currentPlan)
 async function loadPlanById(id){
   try {
-    const res = await fetch('/api/plan/' + id);
+    const res = await fetch('/api/plan/' + id, { headers: getAuthHeaders() });
     if (!res.ok) { alert('Unable to load plan'); return; }
     const plan = await res.json();
     // fetch expenses and filter by plan.month
-    const expRes = await fetch('/api/expenses');
+    const expRes = await fetch('/api/expenses', { headers: getAuthHeaders() });
     const allExpenses = await expRes.json();
     const filtered = allExpenses.filter(e => e.date && e.date.startsWith(plan.month));
     // render the plan details into the current-plan element (don't change active currentPlan)
@@ -202,7 +209,7 @@ function addHistoryHandlers(){
       }
       try {
         const r = await fetch('/api/plan', {
-          method: 'POST', headers: {'content-type':'application/json'},
+          method: 'POST', headers: getAuthHeaders(),
           body: JSON.stringify({ month: targetMonth, income: plan.income, expenses: plan.expenses })
         });
         if (!r.ok) throw new Error('Failed');
