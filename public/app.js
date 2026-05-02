@@ -45,7 +45,8 @@ async function getPlan(){
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div class="cat-name">${category}</div>
             <div style="display:flex;gap:8px">
-              <button class="btn-small edit-plan-cat" data-category="${category}">Edit</button>
+              <button class="btn-small edit-plan-cat" data-category="${category}">Edit Amount</button>
+              <button class="btn-small rename-plan-cat" data-category="${category}">Rename</button>
               <button class="btn-small delete-plan-cat" data-category="${category}">Delete</button>
             </div>
           </div>
@@ -59,7 +60,7 @@ async function getPlan(){
     html += `<div class="plan-summary"><p><strong>Total Expenses Planned:</strong> $${Object.values(data.expenses).reduce((a,b)=>a+parseFloat(b),0).toFixed(2)} | <strong>Total Spent:</strong> $${totalExpensed.toFixed(2)} | <strong>Remaining Budget:</strong> $${(parseFloat(data.income) - totalExpensed).toFixed(2)}</p></div>`;
 
     el.innerHTML = html;
-    // attach handlers for plan category edit/delete
+    // attach handlers for plan category edit/delete/rename
     document.querySelectorAll('.edit-plan-cat').forEach(btn => {
       btn.addEventListener('click', async (ev) => {
         const cat = btn.dataset.category;
@@ -77,6 +78,26 @@ async function getPlan(){
         } catch (e) { alert('Error updating planned category'); }
       });
     });
+
+    document.querySelectorAll('.rename-plan-cat').forEach(btn => {
+      btn.addEventListener('click', async (ev) => {
+        const oldCategory = btn.dataset.category;
+        const newCategory = prompt('Rename category "' + oldCategory + '" to:');
+        if (newCategory === null || newCategory.trim() === '') return;
+        if (newCategory === oldCategory) return;
+        try {
+          const r = await fetch('/api/plan/expense/rename', {
+            method: 'PUT', headers: getAuthHeaders(),
+            body: JSON.stringify({ oldCategory, newCategory: newCategory.trim() })
+          });
+          if (!r.ok) throw new Error('Failed');
+          await getPlan();
+          await loadExpenses();
+          alert('Category renamed successfully!');
+        } catch (e) { alert('Error renaming category'); }
+      });
+    });
+
     document.querySelectorAll('.delete-plan-cat').forEach(btn => {
       btn.addEventListener('click', async (ev) => {
         const cat = btn.dataset.category;
@@ -88,6 +109,7 @@ async function getPlan(){
         } catch (e) { alert('Error deleting planned category'); }
       });
     });
+
     populateCategoryDropdown();
     updateSummaryBar(data, expenses);
   } catch(e) {

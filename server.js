@@ -150,11 +150,25 @@ app.put('/api/expense/:id', passport.authenticate('jwt', { session: false }), as
   }
 });
 
-// API: update a planned category amount (updates latest plan)
+  // API: update a planned category amount (updates latest plan)
 app.put('/api/plan/expense', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { category, amount } = req.body;
     const result = await BudgetDB.updatePlanExpense(category, amount, req.user.id);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API: rename a planned category (updates latest plan and all related expenses)
+app.put('/api/plan/expense/rename', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const { oldCategory, newCategory } = req.body;
+    if (!oldCategory || !newCategory) {
+      return res.status(400).json({ error: 'oldCategory and newCategory are required' });
+    }
+    const result = await BudgetDB.renamePlanCategory(oldCategory, newCategory, req.user.id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });

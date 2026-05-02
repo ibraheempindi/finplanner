@@ -47,6 +47,33 @@ class BudgetDB {
     return { planId: plan.id, category, amount: expenses[category] };
   }
 
+  // Rename a category in the latest plan and update all related expenses
+  async renamePlanCategory(oldCategory, newCategory, userId) {
+    const plan = await this.getLatestPlan(userId);
+    if (!plan) throw new Error('No plan found');
+    const expenses = plan.expenses || {};
+
+    // If the old category does not exist, do nothing
+    if (!(oldCategory in expenses)) {
+      throw new Error('Category not found in plan');
+    }
+
+    // Move the amount to the new category name
+    expenses[newCategory] = expenses[oldCategory];
+    delete expenses[oldCategory];
+
+    // Update the plan's expenses JSON
+    await pool.query('UPDATE plans SET expenses = $1 WHERE id = $2', [expenses, plan.id]);
+
+    // Update all expense records that used the old category name
+    await pool.query(
+      'UPDATE expenses SET category = $1 WHERE user_id = $2 AND category = $3',
+      [newCategory, userId, oldCategory]
+    );
+
+    return { planId: plan.id, oldCategory, newCategory };
+  }
+
   async deletePlanExpense(category, userId) {
     const plan = await this.getLatestPlan(userId);
     if (!plan) throw new Error('No plan found');
