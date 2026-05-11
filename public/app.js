@@ -57,9 +57,33 @@ async function getPlan(){
       `;
     }
     html += '</div>';
+    html += '<div style="margin:16px 0"><button id="add-plan-category" class="btn-small" style="background:#27ae60;color:#fff;border:none">+ Add Category</button></div>';
     html += `<div class="plan-summary"><p><strong>Total Expenses Planned:</strong> $${Object.values(data.expenses).reduce((a,b)=>a+parseFloat(b),0).toFixed(2)} | <strong>Total Spent:</strong> $${totalExpensed.toFixed(2)} | <strong>Remaining Budget:</strong> $${(parseFloat(data.income) - totalExpensed).toFixed(2)}</p></div>`;
 
     el.innerHTML = html;
+    
+    // attach handler for add category button
+    const addCatBtn = document.getElementById('add-plan-category');
+    if (addCatBtn) {
+      addCatBtn.addEventListener('click', async () => {
+        const categoryName = prompt('Enter new category name:');
+        if (!categoryName || categoryName.trim() === '') return;
+        const plannedAmount = prompt(`Enter planned amount for "${categoryName}":`, '0');
+        if (plannedAmount === null) return;
+        const amt = parseFloat(plannedAmount);
+        if (isNaN(amt)) { alert('Invalid amount'); return; }
+        try {
+          const r = await fetch('/api/plan/expense', {
+            method: 'PUT', headers: getAuthHeaders(),
+            body: JSON.stringify({ category: categoryName.trim(), amount: amt })
+          });
+          if (!r.ok) throw new Error('Failed to add category');
+          await getPlan();
+          await populateCategoryDropdown();
+          alert('Category added successfully!');
+        } catch (e) { alert('Error adding category: ' + e.message); }
+      });
+    }
     // attach handlers for plan category edit/delete/rename
     document.querySelectorAll('.edit-plan-cat').forEach(btn => {
       btn.addEventListener('click', async (ev) => {
@@ -488,8 +512,56 @@ function populateCategoryDropdown(){
       option.textContent = category;
       categorySelect.appendChild(option);
     }
+    
+    // Add "Add New Category" option at the end
+    const addNewOption = document.createElement('option');
+    addNewOption.value = '__add_new__';
+    addNewOption.textContent = '+ Add New Category';
+    categorySelect.appendChild(addNewOption);
+    
+    // attach handler for "Add New Category" option
+    categorySelect.removeEventListener('change', handleAddNewCategory);
+    categorySelect.addEventListener('change', handleAddNewCategory);
   } catch(e) {
     console.error('Error populating dropdown:', e);
+  }
+}
+
+async function handleAddNewCategory(ev) {
+  const categorySelect = document.getElementById('category-select');
+  if (categorySelect.value === '__add_new__') {
+    const categoryName = prompt('Enter new category name:');
+    if (!categoryName || categoryName.trim() === '') {
+      categorySelect.value = '';
+      return;
+    }
+    const plannedAmount = prompt(`Enter planned amount for "${categoryName}":`, '0');
+    if (plannedAmount === null) {
+      categorySelect.value = '';
+      return;
+    }
+    const amt = parseFloat(plannedAmount);
+    if (isNaN(amt)) {
+      alert('Invalid amount');
+      categorySelect.value = '';
+      return;
+    }
+    try {
+      const r = await fetch('/api/plan/expense', {
+        method: 'PUT', headers: getAuthHeaders(),
+        body: JSON.stringify({ category: categoryName.trim(), amount: amt })
+      });
+      if (!r.ok) throw new Error('Failed to add category');
+      // Refresh plan and expenses, then update dropdown and set the newly added category as selected
+      await getPlan();
+      await loadExpenses();
+      await populateCategoryDropdown();
+      categorySelect.value = categoryName.trim();
+      alert('Category added successfully!');
+    } catch (e) {
+      alert('Error adding category: ' + e.message);
+      categorySelect.value = '';
+    }
   }
 }
 

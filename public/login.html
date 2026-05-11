@@ -98,13 +98,16 @@
         });
 
         const data = await response.json();
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
-          window.location.href = '/index.html';
-        } else {
-          errorMessage.textContent = data.error || 'An error occurred';
-          errorMessage.style.display = 'block';
-        }
+if (response.ok) {
+  localStorage.setItem('token', data.token);
+  if (data.user && data.user.email) {
+    localStorage.setItem('userEmail', data.user.email);
+  }
+  window.location.href = '/index.html';
+} else {
+  errorMessage.textContent = data.error || 'An error occurred';
+  errorMessage.style.display = 'block';
+}
       } catch (error) {
         errorMessage.textContent = 'Network error';
         errorMessage.style.display = 'block';

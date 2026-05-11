@@ -1,4 +1,4 @@
-<!doctype html>
+
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -19,32 +19,39 @@
   <main>
     <div id="plan-summary-bar" class="card hidden"></div>
     <section id="plan-section" class="card">
-      <h2>Monthly Budget Plan</h2>
-      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-        <label style="margin:0">History:
-          <select id="history-months" style="min-width:160px">
-            <option value="">-- Select month --</option>
-          </select>
-        </label>
-        <button id="load-history" class="btn-small">Load</button>
-        <button id="copy-to-current" class="btn-small">Copy to Current</button>
-        <button id="copy-to-next" class="btn-small">Copy to Next</button>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <h2 style="margin:0">Monthly Budget Plan</h2>
+        <button id="hide-plan-btn" style="margin-left:auto;padding:6px 12px">Hide</button>
       </div>
-      <form id="plan-form" class="form-group">
-        <div class="form-row">
-          <label>Month <input type="month" name="month" required></label>
-          <label>Monthly Income <input type="number" name="income" step="0.01" required></label>
-        </div>
-        <label>Planned Expenses (JSON)
-          <div class="example-row">
-            <small class="example-label">Example:</small>
-            <pre id="expenses-example" class="example-code">{"Rent":1000, "Food":300, "Grocery":100}</pre>
+      <div id="plan-section-content">
+        <div id="plan-form-section">
+          <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+            <label style="margin:0">History:
+              <select id="history-months" style="min-width:160px">
+                <option value="">-- Select month --</option>
+              </select>
+            </label>
+            <button id="load-history" class="btn-small">Load</button>
+            <button id="copy-to-current" class="btn-small">Copy to Current</button>
+            <button id="copy-to-next" class="btn-small">Copy to Next</button>
           </div>
-          <textarea id="expenses-textarea" name="expenses" placeholder='{"Rent":1000, "Food":300}'></textarea>
-        </label>
-        <button type="submit" class="btn-primary">Save Plan</button>
-      </form>
-      <div id="current-plan"></div>
+          <form id="plan-form" class="form-group">
+            <div class="form-row">
+              <label>Month <input type="month" name="month" required></label>
+              <label>Monthly Income <input type="number" name="income" step="0.01" required></label>
+            </div>
+            <label>Planned Expenses (JSON)
+              <div class="example-row">
+                <small class="example-label">Example:</small>
+                <pre id="expenses-example" class="example-code">{"Rent":1000, "Food":300, "Grocery":100}</pre>
+              </div>
+              <textarea id="expenses-textarea" name="expenses" placeholder='{"Rent":1000, "Food":300}'></textarea>
+            </label>
+            <button type="submit" class="btn-primary">Save Plan</button>
+          </form>
+        </div>
+        <div id="current-plan"></div>
+      </div>
     </section>
 
     <section id="expense-section" class="card hidden">
@@ -88,12 +95,34 @@
     if (!token) {
       window.location.href = '/login.html';
     }
-
+    
+    // Display logged-in user email on the logout button
+    const userEmail = localStorage.getItem('userEmail') || 'Guest';
+    document.getElementById('logout-btn').innerHTML = `Logout (${userEmail})`;
+    
     // Logout functionality
     document.getElementById('logout-btn').addEventListener('click', () => {
       localStorage.removeItem('token');
+      localStorage.removeItem('userEmail');
       window.location.href = '/login.html';
     });
+    
+    // Hide/Show plan section form (keeps current plan display visible)
+    document.getElementById('hide-plan-btn').addEventListener('click', () => {
+      const formSection = document.getElementById('plan-form-section');
+      const btn = document.getElementById('hide-plan-btn');
+      const isHidden = formSection.style.display === 'none';
+      formSection.style.display = isHidden ? 'block' : 'none';
+      btn.textContent = isHidden ? 'Hide' : 'Show';
+      localStorage.setItem('planFormCollapsed', isHidden ? 'false' : 'true');
+    });
+    
+    // Restore from localStorage on page load
+    const planFormSection = document.getElementById('plan-form-section');
+    if (localStorage.getItem('planFormCollapsed') === 'true') {
+      planFormSection.style.display = 'none';
+      document.getElementById('hide-plan-btn').textContent = 'Show';
+    }
   </script>
 </body>
 </html>

@@ -1,255 +1,283 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Budget Planner - Developer Tools</title>
-  <style>
-    * { box-sizing: border-box }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f7fa;
-      color: #2c3e50;
-    }
-    header {
-      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-      color: #fff;
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    header h1 {
-      margin: 0 0 12px 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-    nav a {
-      color: #3498db;
-      text-decoration: none;
-      margin-right: 16px;
-      font-weight: 500;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-    main {
-      padding: 16px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin-bottom: 16px;
-    }
-    h2 {
-      margin: 0 0 16px 0;
-      color: #2c3e50;
-      font-size: 1.25rem;
-    }
-    h3 {
-      margin: 20px 0 12px 0;
-      color: #34495e;
-      font-size: 1rem;
-    }
-    button {
-      background: #e74c3c;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      margin-bottom: 16px;
-    }
-    button:hover {
-      background: #c0392b;
-    }
-    button.refresh {
-      background: #3498db;
-    }
-    button.refresh:hover {
-      background: #2980b9;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 16px;
-      background: #fff;
-    }
-    th {
-      background: #ecf0f1;
-      padding: 12px;
-      text-align: left;
-      font-weight: 600;
-      border-bottom: 2px solid #bdc3c7;
-    }
-    td {
-      padding: 12px;
-      border-bottom: 1px solid #ecf0f1;
-    }
-    tr:hover {
-      background: #f8f9fa;
-    }
-    .empty {
-      text-align: center;
-      color: #7f8c8d;
-      padding: 20px;
-      font-style: italic;
-    }
-    pre {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 6px;
-      overflow-x: auto;
-      font-size: 0.85rem;
-    }
-    .status {
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-    .status.success {
-      background: #d5f4e6;
-      color: #27ae60;
-    }
-    .status.error {
-      background: #fadbd8;
-      color: #e74c3c;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>UI Test Page - Budget Planner</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        :root {
+            --primary: #007bff;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--light);
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        
+        .card-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6b7c;
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        .test-section {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 2px solid var(--gray);
+        }
+        
+        .test-section h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .test-card {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        
+        .test-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .note {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 10px;
+            padding: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>🔧 Budget Planner - Developer Tools</h1>
-    <nav>
-      <a href="/">← Back to App</a>
-    </nav>
-  </header>
-
-  <main>
-    <div class="card">
-      <h2>Database Inspector</h2>
-      <button class="refresh" onclick="loadDatabase()">🔄 Refresh Data</button>
-      <button onclick="clearDatabase()">🗑️ Clear All Data</button>
-      
-      <div id="status"></div>
-      
-      <h3>Monthly Plans</h3>
-      <table id="plans-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Month</th>
-            <th>Income</th>
-            <th>Expenses (JSON)</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody id="plans-body">
-          <tr><td colspan="5" class="empty">Loading...</td></tr>
-        </tbody>
-      </table>
-
-      <h3>Daily Expenses</h3>
-      <table id="expenses-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Category</th>
-            <th>Note</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody id="expenses-body">
-          <tr><td colspan="6" class="empty">Loading...</td></tr>
-        </tbody>
-      </table>
-
-      <h3>Raw JSON Data</h3>
-      <pre id="raw-data">Loading...</pre>
-    </div>
-  </main>
-
-  <script>
-    async function loadDatabase() {
-      try {
-        const res = await fetch('/api/dev/db');
-        if (!res.ok) throw new Error('Failed to load database');
-        const data = await res.json();
+    <div class="container">
+        <h1>UI Test Page</h1>
+        <p class="subtitle">Experiment with different UI designs and layouts</p>
         
-        // Display plans
-        const plansBody = document.getElementById('plans-body');
-        if (data.plans.length === 0) {
-          plansBody.innerHTML = '<tr><td colspan="5" class="empty">No plans yet</td></tr>';
-        } else {
-          plansBody.innerHTML = data.plans.map(p => `
-            <tr>
-              <td>${p.id}</td>
-              <td>${p.month}</td>
-              <td>$${parseFloat(p.income).toFixed(2)}</td>
-              <td><code>${JSON.stringify(JSON.parse(p.expenses || '{}')).substring(0, 50)}...</code></td>
-              <td>${new Date(p.created_at).toLocaleString()}</td>
-            </tr>
-          `).join('');
-        }
-        
-        // Display expenses
-        const expensesBody = document.getElementById('expenses-body');
-        if (data.expenses.length === 0) {
-          expensesBody.innerHTML = '<tr><td colspan="6" class="empty">No expenses yet</td></tr>';
-        } else {
-          expensesBody.innerHTML = data.expenses.map(e => `
-            <tr>
-              <td>${e.id}</td>
-              <td>${e.date}</td>
-              <td>$${parseFloat(e.amount).toFixed(2)}</td>
-              <td>${e.category || '-'}</td>
-              <td>${e.note || '-'}</td>
-              <td>${new Date(e.created_at).toLocaleString()}</td>
-            </tr>
-          `).join('');
-        }
-        
-        // Display raw JSON
-        document.getElementById('raw-data').textContent = JSON.stringify(data, null, 2);
-        
-        showStatus('Database loaded successfully', 'success');
-      } catch(e) {
-        console.error('Error:', e);
-        showStatus('Error loading database: ' + e.message, 'error');
-      }
-    }
-
-    async function clearDatabase() {
-      if (!confirm('Are you sure? This will delete ALL plans and expenses.')) return;
-      
-      try {
-        const res = await fetch('/api/dev/clear', { method: 'POST' });
-        if (!res.ok) throw new Error('Failed to clear database');
-        
-        showStatus('Database cleared successfully', 'success');
-        await loadDatabase();
-      } catch(e) {
-        console.error('Error:', e);
-        showStatus('Error clearing database: ' + e.message, 'error');
-      }
-    }
-
-    function showStatus(message, type) {
-      const statusEl = document.getElementById('status');
-      statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
-      setTimeout(() => { statusEl.innerHTML = ''; }, 3000);
-    }
-
-    // Load on page load
-    loadDatabase();
-  </script>
-</body>
+        <div class="card">
+            <div class="card-header">Current UI Elements</div>
+            <div class="card-body">
+                <p>This page demonstrates the current UI components and allows testing of new design elements.</p>
+                
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>Button Variations</h3>
+                        <div class="btn-container">
+                            <button class="btn">Primary Button</button>
+                            <button class="btn btn-secondary">Secondary Button</button>
+                            <button class="btn btn-success">Success Button</button>
+                            <button class="btn btn-danger">Danger Button</button>
+                        </div>
+                        <div class="note">Test different button styles and states</div>
+                    </div>
+                    
+                    <div class="test-card">
+                        <h3>Color Scheme Test</h3>
+                        <div class="test-card" style="background: #f0f8ff;">
+                            <h3>Light Theme</h3>
+                            <p>This shows how the UI looks with a light background theme.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="test-card">
+                        <h3>Dark Mode Test</h3>
+                        <div class="test-card" style="background: #2d3748; color: white;">
+                            <h3>Dark Theme</h3>
+                            <p>This demonstrates a dark mode variant of the UI.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="test-card">
+                        <h3>Card Layout Test</h3>
+                        <div class="test-card" style="background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <h3>Card with Shadow</h3>
+                            <p>This shows a card with enhanced shadow effects for better depth perception.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="test-section">
+                    <h2>UI Components to Test</h2>
+                    <div class="test-grid">
+                        <div class="test-card">
+                            <h3>New Button Style</h3>
+                            <div class="btn-container">
+                                <button class="btn" style="background: #6c757d; color: white;">New Button Style</button>
+                                <button class="btn" style="background: #343a40; color: white;">Dark Button</button>
+                            </div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Improved Form Elements</h3>
+                            <div style="margin-top: 15px;">
+                                <label for="test-input">Label:</label>
+                                <input type="text" id="test-input" placeholder="Enter value" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                        </div>
+                        
+                        <div class="test-card">
+                            <h3>Responsive Design Test</h3>
+                            <div style="width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+                                <p>This container will test responsive behavior on different screen sizes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">UI Improvement Ideas</div>
+                    <div class="card-body">
+                        <ul style="padding-left: 20px;">
+                            <li>Add subtle animations to buttons and cards</div>
+                            <li>Implement smooth transitions for UI elements</div>
+                            <li>Add hover effects to interactive elements</div>
+                            <li>Improve spacing and padding for better readability</div>
+                            <li>Add micro-interactions for better user feedback</div>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">How to Use This Page</div>
+                <div class="card-body">
+                    <p>This test page is separate from the main application and can be used to:</p>
+                    <ul>
+                        <li>Test new UI designs without affecting the original pages</div>
+                        <li>Try out different color schemes and layouts</div>
+                        <li>Test button styles and states</div>
+                        <li>Practice implementing new UI components</div>
+                        <li>Validate design decisions before applying to main app</div>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">Next Steps</div>
+                <div class="card-body">
+                    <p>To test UI improvements:</p>
+                    <ol>
+                        <li>Open this test page in your browser</div>
+                        <li>Click on different elements to see how they respond</div>
+                        <li>Modify the CSS in this file to test different styles</div>
+                        <li>Compare the test page with the main application</div>
+                        <li>Implement successful designs in the main app</div>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>
